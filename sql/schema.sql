@@ -1,0 +1,13 @@
+CREATE TABLE dbo.Items (
+    Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Items PRIMARY KEY,
+    Title NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000) NULL,
+    Status NVARCHAR(40) NOT NULL CONSTRAINT DF_Items_Status DEFAULT 'Open',
+    CreatedBy NVARCHAR(256) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_Items_CreatedAt DEFAULT SYSUTCDATETIME(),
+    UpdatedBy NVARCHAR(256) NULL,
+    UpdatedAt DATETIME2 NULL
+);
+
+CREATE INDEX IX_Items_Status ON dbo.Items(Status);
+CREATE INDEX IX_Items_CreatedAt ON dbo.Items(CreatedAt DESC);
