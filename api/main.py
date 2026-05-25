@@ -1,7 +1,10 @@
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .auth import display_name, require_admin, require_reader
 from .config import get_settings
@@ -10,6 +13,8 @@ from .models import Item, ItemCreate, ItemUpdate
 
 
 settings = get_settings()
+BASE_DIR = Path(__file__).resolve().parent.parent
+DIST_DIR = BASE_DIR / "dist"
 
 app = FastAPI(title="SQL SSO CRUD API")
 
@@ -121,3 +126,13 @@ def delete_item(
         cursor.execute("DELETE FROM dbo.Items WHERE Id = ?", item_id)
         if cursor.rowcount == 0:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+if DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    def serve_react_app(full_path: str):
+        requested_path = DIST_DIR / full_path
+        if requested_path.is_file():
+            return FileResponse(requested_path)
+        return FileResponse(DIST_DIR / "index.html")
