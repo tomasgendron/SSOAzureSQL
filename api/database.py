@@ -1,19 +1,23 @@
 import struct
 from collections.abc import Generator
 from contextlib import contextmanager
+import os
 
 import pyodbc
-from azure.identity import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
 from .config import get_settings
 
 
 SQL_COPT_SS_ACCESS_TOKEN = 1256
 settings = get_settings()
-credential = DefaultAzureCredential(
-    managed_identity_client_id=settings.managed_identity_client_id,
-    exclude_interactive_browser_credential=False,
-)
+if os.getenv("WEBSITE_SITE_NAME"):
+    credential = ManagedIdentityCredential(client_id=settings.managed_identity_client_id)
+else:
+    credential = DefaultAzureCredential(
+        managed_identity_client_id=settings.managed_identity_client_id,
+        exclude_interactive_browser_credential=False,
+    )
 
 
 def _access_token_struct() -> bytes:
