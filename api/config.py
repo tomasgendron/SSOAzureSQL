@@ -10,6 +10,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 class Settings:
     tenant_id = os.environ["AZURE_TENANT_ID"]
     client_id = os.environ["AZURE_CLIENT_ID"]
+    managed_identity_client_id = os.getenv("AZURE_MANAGED_IDENTITY_CLIENT_ID")
     sql_server = os.environ["AZURE_SQL_SERVER"]
     sql_database = os.environ["AZURE_SQL_DATABASE"]
     sql_odbc_driver = os.getenv("AZURE_SQL_ODBC_DRIVER", "ODBC Driver 18 for SQL Server")

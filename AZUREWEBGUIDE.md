@@ -244,6 +244,7 @@ Add these application settings:
 ```text
 AZURE_TENANT_ID=b7cb14b9-dc5c-44fe-a920-7e6bb7e310a6
 AZURE_CLIENT_ID=57694959-05d4-412a-bf3a-4c16ff1f9828
+AZURE_MANAGED_IDENTITY_CLIENT_ID=<user-assigned managed identity client ID, or leave blank for system-assigned identity>
 AZURE_SQL_SERVER=sql-sso-crud-dev-6931936.database.windows.net
 AZURE_SQL_DATABASE=sqldb-crud-dev
 AZURE_SQL_ODBC_DRIVER=ODBC Driver 18 for SQL Server

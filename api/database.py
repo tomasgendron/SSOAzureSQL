@@ -9,7 +9,11 @@ from .config import get_settings
 
 
 SQL_COPT_SS_ACCESS_TOKEN = 1256
-credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+settings = get_settings()
+credential = DefaultAzureCredential(
+    managed_identity_client_id=settings.managed_identity_client_id,
+    exclude_interactive_browser_credential=False,
+)
 
 
 def _access_token_struct() -> bytes:
@@ -19,7 +23,6 @@ def _access_token_struct() -> bytes:
 
 
 def get_connection() -> pyodbc.Connection:
-    settings = get_settings()
     connection_string = (
         f"Driver={{{settings.sql_odbc_driver}}};"
         f"Server=tcp:{settings.sql_server},1433;"
