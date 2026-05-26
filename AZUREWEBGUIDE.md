@@ -250,6 +250,7 @@ AZURE_SQL_ODBC_DRIVER=ODBC Driver 18 for SQL Server
 ALLOWED_ORIGINS=https://sso-azure-sql-crud.azurewebsites.net
 USER_ROLE=User
 ADMIN_ROLE=Admin
+PYTHONPATH=/home/site/wwwroot/.python_packages/lib/site-packages
 SCM_DO_BUILD_DURING_DEPLOYMENT=false
 ```
 
