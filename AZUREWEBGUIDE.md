@@ -34,6 +34,160 @@ sso-azure-sql-crud
 
 If that name is taken, choose a unique name and replace it everywhere.
 
+## Fast Double Check Script
+
+After Azure resources are created, run this from the repo root:
+
+```powershell
+.\scripts\check-azure-webapp.ps1
+```
+
+The script checks the App Service state, runtime, startup command, app settings, managed identity, Entra redirect URIs, app roles, SQL firewall, and `/api/health`.
+
+If you changed names, pass them explicitly:
+
+```powershell
+.\scripts\check-azure-webapp.ps1 `
+  -ResourceGroup "rg-sql-sso-crud-dev" `
+  -AppName "sso-azure-sql-crud" `
+  -SqlServer "sql-sso-crud-dev-6931936" `
+  -SqlDatabase "sqldb-crud-dev" `
+  -SsoClientId "57694959-05d4-412a-bf3a-4c16ff1f9828" `
+  -TenantId "b7cb14b9-dc5c-44fe-a920-7e6bb7e310a6"
+```
+
+The script cannot verify SQL contained users unless it connects directly to the database, so it prints the SQL grants to manually confirm.
+
+## Hard-Won Warnings
+
+These are the issues that caused real failures during the first deployment:
+
+1. `localhost` and `127.0.0.1` are different redirect URIs.
+
+   For local development, use `http://localhost:5177` in the browser and add it under **Single-page application** redirect URIs. Keeping `http://127.0.0.1:5177` is fine, but the browser URL and Entra redirect URI must match exactly.
+
+2. The production URL may not be the short `azurewebsites.net` hostname.
+
+   New App Service domains can look like:
+
+   ```text
+   https://sso-azure-sql-crud-begfcqaegmaghuap.canadacentral-01.azurewebsites.net
+   ```
+
+   Use the exact **Default domain** from the App Service Overview page for both:
+
+   ```text
+   ALLOWED_ORIGINS
+   Entra SPA redirect URI
+   ```
+
+3. Free F1 can stop the site with `QuotaExceeded`.
+
+   If the app shows `Application Error` or `403 Site Disabled`, check:
+
+   ```text
+   App Service Plan -> Quotas
+   ```
+
+   The app may recover after quota reset, or you can temporarily scale up to Basic B1 for testing.
+
+4. GitHub Actions needs Azure login secrets.
+
+   If deploy fails with:
+
+   ```text
+   Login failed with Error: Using auth-type: SERVICE_PRINCIPAL. Not all values are present.
+   ```
+
+   Add GitHub repository secrets:
+
+   ```text
+   AZURE_CLIENT_ID
+   AZURE_TENANT_ID
+   AZURE_SUBSCRIPTION_ID
+   ```
+
+   This `AZURE_CLIENT_ID` is the GitHub deployment identity, not the SSO app registration, unless you intentionally use one app for both.
+
+5. Azure Deployment Center may expect a specific workflow filename.
+
+   Deployment Center looked for:
+
+   ```text
+   .github/workflows/main_sso-azure-sql-crud.yml
+   ```
+
+   If the preview says `No preview available`, either create that file or choose the workflow file that actually exists in GitHub.
+
+6. Python dependencies need `PYTHONPATH`.
+
+   The workflow installs dependencies into:
+
+   ```text
+   .python_packages/lib/site-packages
+   ```
+
+   App Service needs:
+
+   ```text
+   PYTHONPATH=/home/site/wwwroot/.python_packages/lib/site-packages
+   ```
+
+   Without it, logs show:
+
+   ```text
+   No module named uvicorn
+   ```
+
+7. Do not confuse the SSO client ID with the managed identity client ID.
+
+   `AZURE_CLIENT_ID` is used by this app to validate Microsoft sign-in tokens. Azure Identity also treats `AZURE_CLIENT_ID` specially, so the backend code explicitly uses App Service managed identity for SQL.
+
+   For the normal system-assigned identity case, do **not** set:
+
+   ```text
+   AZURE_MANAGED_IDENTITY_CLIENT_ID
+   ```
+
+   Only set it if the web app has a user-assigned managed identity attached.
+
+8. The App Service managed identity must be granted inside Azure SQL.
+
+   Enabling identity on the App Service is not enough. In the SQL database, run:
+
+   ```sql
+   CREATE USER [sso-azure-sql-crud] FROM EXTERNAL PROVIDER;
+   ALTER ROLE db_datareader ADD MEMBER [sso-azure-sql-crud];
+   ALTER ROLE db_datawriter ADD MEMBER [sso-azure-sql-crud];
+   ```
+
+9. SQL network access can show up as an ODBC timeout.
+
+   If logs show:
+
+   ```text
+   Login timeout expired
+   ```
+
+   check:
+
+   ```text
+   SQL server -> Networking
+   Public network access: Enabled
+   Allow Azure services and resources to access this server: Yes
+   ```
+
+10. Use logs rather than guessing.
+
+    The most useful pages are:
+
+    ```text
+    App Service -> Log stream
+    App Service -> Deployment Center -> Logs
+    GitHub -> Actions
+    App Service Plan -> Quotas
+    ```
+
 ## 1. Prepare The Repo For Production Hosting
 
 The local development setup uses Vite for the React frontend and FastAPI for the backend. In Azure App Service, use one web app: build React into `dist`, then let FastAPI serve both `/api/*` and the React static app.
