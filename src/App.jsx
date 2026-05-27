@@ -1,7 +1,7 @@
 import React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
-import { LogIn, LogOut, Plus, RefreshCw, Save, ShieldCheck, Trash2, X } from "lucide-react";
+import { LogIn, LogOut, Pencil, Plus, RefreshCw, Save, ShieldCheck, Trash2, X } from "lucide-react";
 
 import { createItem, deleteItem, getItems, getMe, updateItem } from "./api.js";
 import { loginRequest } from "./authConfig.js";
@@ -43,6 +43,7 @@ function useIdentityToken() {
 function AppShell() {
   const { instance, accounts } = useMsal();
   const getToken = useIdentityToken();
+  const titleInputRef = useRef(null);
   const [items, setItems] = useState([]);
   const [me, setMe] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -78,6 +79,8 @@ function AppShell() {
       description: item.description ?? "",
       status: item.status,
     });
+    titleInputRef.current?.focus();
+    titleInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function resetForm() {
@@ -158,6 +161,7 @@ function AppShell() {
             <label>
               Title
               <input
+                ref={titleInputRef}
                 value={form.title}
                 onChange={(event) => setForm({ ...form, title: event.target.value })}
                 placeholder="Quarterly planning"
@@ -226,7 +230,12 @@ function AppShell() {
                 {items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <button className="linkButton" onClick={() => editItem(item)}>
+                      <button
+                        className="linkButton"
+                        onClick={() => editItem(item)}
+                        disabled={!isAdmin || isBusy}
+                        title={isAdmin ? "Edit item" : "Admin role required to edit"}
+                      >
                         {item.title}
                       </button>
                       <p>{item.description || "No description"}</p>
@@ -246,6 +255,16 @@ function AppShell() {
                     </td>
                     <td className="rowActions">
                       <button
+                        type="button"
+                        className="iconButton"
+                        onClick={() => editItem(item)}
+                        disabled={!isAdmin || isBusy}
+                        title="Edit"
+                      >
+                        <Pencil size={17} />
+                      </button>
+                      <button
+                        type="button"
                         className="iconButton danger"
                         onClick={() => removeItem(item.id)}
                         disabled={!isAdmin || isBusy}

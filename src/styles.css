@@ -307,6 +307,10 @@ td p {
   text-align: left;
 }
 
+.linkButton:disabled {
+  color: #526071;
+}
+
 .status {
   border-radius: 999px;
   display: inline-flex;
@@ -337,8 +341,10 @@ td p {
 }
 
 .rowActions {
-  text-align: right;
-  width: 62px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 108px;
 }
 
 .empty {
